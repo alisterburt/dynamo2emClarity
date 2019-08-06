@@ -14,6 +14,10 @@ Open the dynamo2emClarity.py file in a text editor and change the variables as n
 
 In a terminal run `python dynamo2emClarity.py` making sure `python` points to a python3 interpreter with numpy installed
 
+## Output
+The output folder you specified will contain two folders, recon and convmap
+
+These folders can be copied directly into an emClarity project directory and the project can be initialised
 
 ## Known issues
 * Tomograms in which dynamo particles are defined must exist, their size is checked.
