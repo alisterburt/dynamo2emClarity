@@ -1,6 +1,8 @@
 # dynamo2emClarity
 A tool for conversion between subtomogram averaging softwares Dynamo and emClarity
 
+This script takes a set of particle positions and orientations from a dynamo table, calculates subareas of the full tomograms containing particles which will fit in GPU memory and produces all the relevant metadata required to start an emClarity alignment project.
+
 Tested and working with python 3.7 and numpy 1.17 (should work with any version of python3 and numpy)
 
 ## Files needed
