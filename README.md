@@ -14,6 +14,6 @@ In a terminal run `python dynamo2emClarity.py` making sure `python` points to a 
 
 
 ## Known issues
-* Tomograms in which dynamo points are defined must exist, their size is checked.
-* Tomograms in dynamo must be full reconstructions, not trimmed or shiften in X, Y or Z
-* Tomograms in dynamo must be rotated by 90 degrees around the X axis for volume reorientation, not Y-Z flipped
+* Tomograms in which dynamo particles are defined must exist, their size is checked.
+* Tomograms in which dynamo particles are defined must be full reconstructions, not trimmed or shiften in X, Y or Z
+* Tomograms in which dynamo particles are defined must be rotated by 90 degrees around the X axis for volume reorientation, not Y-Z flipped
