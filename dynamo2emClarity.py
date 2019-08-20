@@ -166,30 +166,10 @@ enlarged_bounding_boxes = []
 
 for bounding_box in bounding_boxes:
     bounding_box_enlarged = utils.enlargeBoundingBox(bounding_box, particle_sidelength, 1.5)
+    bounding_box_enlarged = bounding_box_enlarged.astype(int)
     enlarged_bounding_boxes.append(bounding_box_enlarged)
 
-# calculate xyz position relative to enlarged bounding box
-xyz_in_subareas = []
 
-for idx in indices:
-    current_bounding_box = enlarged_bounding_boxes[idx]
-    current_xyz = xyz_binned[idx]
-    # calculate xyz in subarea
-    xyz_out = current_xyz
-    xyz_out = xyz_out - current_bounding_box[0, :]
-    xyz_in_subareas.append(xyz_out)
-
-# Write out emClarity csv files
-
-for idx in indices:
-    utils.emClarity_csv_write(output_dir + 'convmap/',
-                              basenames[idx],
-                              subarea_numbers[idx],
-                              binning_factor,
-                              particle_tags[idx],
-                              xyz_in_subareas[idx],
-                              euler_angles_emClarity[idx],
-                              rotation_matrices_emClarity[idx])
 
 # Calculate xyz coordinates of each tomogram file
 xyz_tomo_binned = [utils.mrc_header_xyz(tomogram_file) for tomogram_file in tomogram_files]
@@ -202,6 +182,29 @@ for idx in indices:
     current_xyz_tomo = xyz_tomo_binned[idx]
     current_subarea_geom = utils.calculate_subarea_geometry(current_bounding_box, current_xyz_tomo, binning_factor)
     subarea_geometries.append(current_subarea_geom)
+
+# calculate xyz position relative to enlarged bounding box
+xyz_in_subareas = []
+
+for idx in indices:
+    current_bounding_box = enlarged_bounding_boxes[idx]
+    current_xyz = xyz_binned[idx]
+    # calculate xyz in subarea
+    xyz_out = current_xyz
+    xyz_out = xyz_out - current_bounding_box[0, :]
+    xyz_in_subareas.append(xyz_out)
+# Write out emClarity csv files
+
+for idx in indices:
+    utils.emClarity_csv_write(output_dir + 'convmap/',
+                              basenames[idx],
+                              subarea_numbers[idx],
+                              binning_factor,
+                              particle_tags[idx],
+                              xyz_in_subareas[idx],
+                              euler_angles_emClarity[idx],
+                              rotation_matrices_emClarity[idx])
+
 
 # Write out emClarity recon.coords files
 last_basename = 0
@@ -231,6 +234,18 @@ for idx in indices:
             recon_coords.write(str(current_subarea_geom['SHIFT1']) + '\n')
             recon_coords.write(str(current_subarea_geom['SHIFT2']) + '\n')
         last_basename = current_basename
+
+# Write scripts for reconstructing subareas
+# Get list of recon_coords files
+recon_coords_files = []
+for file in os.listdir(output_dir+'recon/'):
+    if file.endswith('_recon.coords'):
+        recon_coords_files.append(os.path.join((output_dir+'recon/'),file))
+
+# generate scripts for each recon_coords file
+for recon_coords_file in recon_coords_files:
+    utils.reconstruct_subareas_scripts(recon_coords_file, binning=binning_factor, output_dir=(output_dir + 'recon/'))
+
 
 # write out .txt files containing xyz coordinates of each particle in binned subarea for easy mod file generation
 for idx in indices:
