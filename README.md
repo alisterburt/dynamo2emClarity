@@ -12,9 +12,7 @@ Tested and working with python 3.7 and numpy 1.17 (should work with any version 
 ## How to run
 Download or clone the whole repository
 
-Open the dynamo2emClarity.py file in a text editor and change the variables as necessary in the SETUP section (lines 5-26)
-
-In a terminal run `python dynamo2emClarity.py` making sure `python` points to a python3 interpreter with numpy installed
+In a terminal run `python dynamo2emClarity.py -arguments <inputs>` making sure `python` points to a python3 interpreter with numpy installed
 
 USAGE: `dynamo2emClarity.py (argument1) <input1> (argument2) <input2>` etc...
 
