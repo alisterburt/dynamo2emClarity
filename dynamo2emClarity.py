@@ -1,47 +1,97 @@
 import os
+import sys
+import getopt
 import numpy as np
 import utils
+
+# Usage explanation
+usage = """
+USAGE: reconstruct_tomos.py (argument1) <input1> (argument2) <input2> etc...
+    Abbreviation    Argument                 Input                   Default
+    -t              (--table_file)           <dynamo_table_file>
+    -o              (--output_dir)           <output_directory>
+    -m              (--table_map_file)       <table_map_file>               
+    -b              (--binning_table)        <binning_table>    
+    -s              (--particle_sidelength)  <particle_sidelength>                     
+    N/A             (--IMOD_bin_dir)         <IMOD_bin_dir>          default=/usr/local/IMOD/bin
+"""
+
 
 #####################
 ####### SETUP #######
 #####################
 
 ### Set table file
-table_file = '/ibshome/aburt/dynamo2emClarity/box7_tomo_011_MC/temp_crop.tbl'
+TABLE_FILE = None
 
 ### Set dynamo format tomogram table map file (as per https://wiki.dynamo.biozentrum.unibas.ch/w/index.php/Tomogram-table_map_file) ###
-table_map_file = '/ibshome/aburt/dynamo2emClarity/box7_tomo_011_MC/table_map.doc'
+TABLE_MAP_FILE = None
 
 ### Set output directory for CSV and recon_coords files
-output_dir = '/ibshome/aburt/dynamo2emClarity/box7_tomo_011_MC/test_output'
+OUT_DIR = None
 
 ### Set IMOD bin directory
-IMOD_dir = '/usr/local/IMOD/bin/'
+IMOD_BIN_DIR = '/usr/local/IMOD/bin/'
 
 ### Set current binning factor of coordinates in dynamo table file
-binning_factor = 8
+BINNING_FACTOR_TABLE = None
 
 ### Set particle sidelength at current binning
-particle_sidelength = 32
+SIDELENGTH_PARTICLE = None
+
+if len(sys.argv) > 1:
+
+    options, remainder = getopt.getopt(sys.argv[1:], 't:m:o:b:s:', ['table=',
+                                                                   'table_map=',
+                                                                   'output_dir=',
+                                                                   'binning_table=',
+                                                                   'particle_sidelength=',
+                                                                   'IMOD_bin_dir'
+                                                                   ])
+    for opt, arg in options:
+        if opt in ('-t', '--table_file'):
+            TABLE_FILE = arg
+        elif opt in ('-m', '--table_map_file'):
+            TABLE_MAP_FILE = arg
+        elif opt in ('-o', '--output_dir'):
+            OUT_DIR = arg
+        elif opt in ('-b', '--binning_table'):
+            BINNING_FACTOR_TABLE = int(arg)
+        elif opt in ('-s', '--particle_sidelength'):
+            SIDELENGTH_PARTICLE = int(arg)
+        elif opt == '--IMOD_bin_dir':
+            IMOD_BIN_DIR = arg
+
+    print("Running dynamo2emClarity.py using command line arguments...")
+
+else:
+    print(usage)
+    print('Desisting...')
+    sys.exit(0)
 
 #####################
 ###### Running ######
 #####################
+if any(v is None for v in [TABLE_FILE, TABLE_MAP_FILE, OUT_DIR, BINNING_FACTOR_TABLE, SIDELENGTH_PARTICLE]):
+    print(usage)
+    print('Missing some necessary arguments, desisting...')
+    sys.exit(0)
+
 # Sanity checks on output directory
-if not output_dir.endswith('/'):
-    output_dir = output_dir + '/'
+if not OUT_DIR.endswith('/'):
+    OUT_DIR = OUT_DIR + '/'
 
 # Sanity checks on IMOD dir
-if not IMOD_dir.endswith('/'):
-    IMOD_dir = IMOD_dir + '/'
+if not IMOD_BIN_DIR.endswith('/'):
+    IMOD_BIN_DIR = IMOD_BIN_DIR + '/'
 
 # make output,recon and convmap directory
-os.makedirs('{}'.format(output_dir), exist_ok=True)
-os.makedirs('{}recon'.format(output_dir), exist_ok=True)
-os.makedirs('{}convmap'.format(output_dir), exist_ok=True)
+os.makedirs('{}'.format(OUT_DIR), exist_ok=True)
+os.makedirs('{}recon'.format(OUT_DIR), exist_ok=True)
+os.makedirs('{}convmap'.format(OUT_DIR), exist_ok=True)
 
 # Load table file
-table = utils.DynamoTable(table_file=table_file)
+table = utils.DynamoTable(table_file=TABLE_FILE)
 
 # Separate table into list of tables, one item per unique tomogram
 list_of_tables = table.unique()
@@ -52,7 +102,7 @@ nTomos = len(list_of_tables)
 
 def geometry_check(table_list):
     """Checks bounding boxes for a list of tables"""
-    BB_pass = [utils.checkBoundingBox(table, particle_sidelength, binning_factor) for table in table_list]
+    BB_pass = [utils.checkBoundingBox(table, SIDELENGTH_PARTICLE, BINNING_FACTOR_TABLE) for table in table_list]
 
     # check if any tables in list failed the check
     BB_pass = np.all(BB_pass)
@@ -62,7 +112,7 @@ def geometry_check(table_list):
 # test = geometry_check(list_of_subtables)
 # if table list doesn't pass geometry check, split tables RECURSIVE
 def checkAndSplit(local_table):
-    if utils.checkBoundingBox(local_table, 32, binning_factor):
+    if utils.checkBoundingBox(local_table, 32, BINNING_FACTOR_TABLE):
         return [local_table]
     else:
         tmp_list_of_tables = local_table.split()
@@ -98,7 +148,7 @@ for table in final_list:
     table_idx.append(table.unique_ids)
 
     # add table map file for each table
-    table.addTableMap(table_map_file)
+    table.addTableMap(TABLE_MAP_FILE)
 
     # Read from table map the tomogram file and append to output list
     tomogram_files.append(table.table_map[int(table.unique_ids)])
@@ -165,7 +215,7 @@ subarea_numbers = calculate_subarea_numbers(table_idx)
 enlarged_bounding_boxes = []
 
 for bounding_box in bounding_boxes:
-    bounding_box_enlarged = utils.enlargeBoundingBox(bounding_box, particle_sidelength, 1.5)
+    bounding_box_enlarged = utils.enlargeBoundingBox(bounding_box, SIDELENGTH_PARTICLE, 1.5)
     bounding_box_enlarged = bounding_box_enlarged.astype(int)
     enlarged_bounding_boxes.append(bounding_box_enlarged)
 
@@ -180,7 +230,7 @@ for idx in indices:
     current_bounding_box = enlarged_bounding_boxes[idx]
     current_xyz = xyz_binned[idx]
     current_xyz_tomo = xyz_tomo_binned[idx]
-    current_subarea_geom = utils.calculate_subarea_geometry(current_bounding_box, current_xyz_tomo, binning_factor)
+    current_subarea_geom = utils.calculate_subarea_geometry(current_bounding_box, current_xyz_tomo, BINNING_FACTOR_TABLE)
     subarea_geometries.append(current_subarea_geom)
 
 # calculate xyz position relative to enlarged bounding box
@@ -196,10 +246,10 @@ for idx in indices:
 # Write out emClarity csv files
 
 for idx in indices:
-    utils.emClarity_csv_write(output_dir + 'convmap/',
+    utils.emClarity_csv_write(OUT_DIR + 'convmap/',
                               basenames[idx],
                               subarea_numbers[idx],
-                              binning_factor,
+                              BINNING_FACTOR_TABLE,
                               particle_tags[idx],
                               xyz_in_subareas[idx],
                               euler_angles_emClarity[idx],
@@ -212,7 +262,7 @@ last_basename = 0
 for idx in indices:
     current_basename = basenames[idx]
     current_subarea_geom = subarea_geometries[idx]
-    filename = '{}{}_recon.coords'.format(output_dir + 'recon/', current_basename)
+    filename = '{}{}_recon.coords'.format(OUT_DIR + 'recon/', current_basename)
     if last_basename != current_basename:
         nsubregions = table_idx.count(table_idx[idx])
         with open(filename, 'w') as recon_coords:
@@ -238,13 +288,13 @@ for idx in indices:
 # Write scripts for reconstructing subareas
 # Get list of recon_coords files
 recon_coords_files = []
-for file in os.listdir(output_dir+'recon/'):
+for file in os.listdir(OUT_DIR + 'recon/'):
     if file.endswith('_recon.coords'):
-        recon_coords_files.append(os.path.join((output_dir+'recon/'),file))
+        recon_coords_files.append(os.path.join((OUT_DIR + 'recon/'), file))
 
 # generate scripts for each recon_coords file
 for recon_coords_file in recon_coords_files:
-    utils.reconstruct_subareas_scripts(recon_coords_file, binning=binning_factor, output_dir=(output_dir + 'recon/'))
+    utils.reconstruct_subareas_scripts(recon_coords_file, binning=BINNING_FACTOR_TABLE, output_dir=(OUT_DIR + 'recon/'))
 
 
 # write out .txt files containing xyz coordinates of each particle in binned subarea for easy mod file generation
@@ -253,12 +303,12 @@ for idx in indices:
     current_subarea = subarea_numbers[idx]
     current_xyz = xyz_in_subareas[idx]
 
-    filename = '{}{}_{}_bin{}.txt'.format(output_dir + 'convmap/', current_basename, current_subarea, binning_factor)
+    filename = '{}{}_{}_bin{}.txt'.format(OUT_DIR + 'convmap/', current_basename, current_subarea, BINNING_FACTOR_TABLE)
     np.savetxt(filename, current_xyz, '%f', delimiter=' ')
 
     # try to write model file from txt file
     # point2model
-    point2model = IMOD_dir + 'point2model'
+    point2model = IMOD_BIN_DIR + 'point2model'
     args = '-circle 3 -sphere 2 -scat -thick 2 -color 80,191,255'
     if os.path.isfile(point2model):
         os.system(point2model + ' ' + args + ' ' + filename + ' ' + filename.replace('.txt', '.mod'))
