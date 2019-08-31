@@ -16,6 +16,16 @@ Open the dynamo2emClarity.py file in a text editor and change the variables as n
 
 In a terminal run `python dynamo2emClarity.py` making sure `python` points to a python3 interpreter with numpy installed
 
+USAGE: `dynamo2emClarity.py (argument1) <input1> (argument2) <input2>` etc...
+
+    Abbreviation    Argument                 Input                   Default
+    -t              (--table_file)           <dynamo_table_file>
+    -o              (--output_dir)           <output_directory>
+    -m              (--table_map_file)       <table_map_file>               
+    -b              (--binning_table)        <binning_table>    
+    -s              (--particle_sidelength)  <particle_sidelength>                     
+    N/A             (--IMOD_bin_dir)         <IMOD_bin_dir>          default=/usr/local/IMOD/bin
+
 ## Output
 The output folder you specified will contain two folders, recon and convmap
 

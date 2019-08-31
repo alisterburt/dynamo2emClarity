@@ -6,7 +6,7 @@ import utils
 
 # Usage explanation
 usage = """
-USAGE: reconstruct_tomos.py (argument1) <input1> (argument2) <input2> etc...
+USAGE: dynamo2emClarity.py (argument1) <input1> (argument2) <input2> etc...
     Abbreviation    Argument                 Input                   Default
     -t              (--table_file)           <dynamo_table_file>
     -o              (--output_dir)           <output_directory>
